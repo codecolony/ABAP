@@ -1,0 +1,21 @@
+*&---------------------------------------------------------------------*
+*& Report  ZTEST_INF_CHANGE
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZTEST_INF_CHANGE.
+
+data lo_obj TYPE REF TO zcl_test_inf_change.
+CREATE OBJECT lo_obj.
+
+CALL METHOD lo_obj->if_test_raghu~method_one_ins( )
+    .
+
+write: 'first method called\n'.
+
+zcl_test_inf_change=>if_test_raghu~method_two_static( ).
+
+write: 'second static method called'.

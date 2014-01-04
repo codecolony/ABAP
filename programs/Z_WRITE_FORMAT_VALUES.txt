@@ -1,0 +1,23 @@
+*&---------------------------------------------------------------------*
+*& Report  Z_WRITE_FORMAT_VALUES
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  Z_WRITE_FORMAT_VALUES.
+
+DATA lv_out type char255.
+DATA lv_in TYPE p DECIMALS 2 VALUE 123222.
+
+*FIELD-SYMBOLS: <lv_in> TYPE any.
+
+*<lv_in> = '123445.55'.
+
+
+*ASSIGN 12344.55 TO <lv_in>.
+
+write lv_in To lv_out.
+write /.
+write lv_out.

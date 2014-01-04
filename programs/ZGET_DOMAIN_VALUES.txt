@@ -1,0 +1,25 @@
+*&---------------------------------------------------------------------*
+*& Report  ZGET_DOMAIN_VALUES
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZGET_DOMAIN_VALUES.
+
+DATA lt_values TYPE TABLE OF dd07v.
+DATA ls_value LIKE LINE OF lt_values.
+
+  CALL FUNCTION 'DDUT_DOMVALUES_GET'
+    EXPORTING
+      name      = cl_alert_consm_constants=>ac_domname_contexttype
+      langu     = sy-langu
+    TABLES
+      dd07v_tab = lt_values.
+
+  LOOP AT lt_values INTO ls_value.
+    WRITE ls_value-domvalue_l.
+    WRITE ls_value-ddtext.
+    WRITE /.
+  ENDLOOP.

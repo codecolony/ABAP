@@ -1,0 +1,97 @@
+*&---------------------------------------------------------------------*
+*& Report  ZGET_CAMEL_CASE_STRING
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZGET_CAMEL_CASE_STRING.
+
+*DEFINE m_camelcase_v1.
+*data: co_space type c value space.
+*data: ltp_string type string.
+*data: ltp_part1 type char20,
+*ltp_part2 type char20,
+*ltp_part3 type char20,
+*ltp_part4 type char20.
+*
+** Assign our paramater to local variable
+*ltp_string = &1.
+*
+** Split local variable into a maximum of four character based parts based via split value space
+*split ltp_string at co_space into ltp_part1 ltp_part2 ltp_part3 ltp_part4.
+*
+** Translate every character in lower case format
+*translate ltp_part1 to lower case.
+*translate ltp_part2 to lower case.
+*translate ltp_part3 to lower case.
+*translate ltp_part4 to lower case.
+*
+** Turn first letter of each part into capitalized letter
+*translate ltp_part1(1) to upper case.
+*translate ltp_part2(1) to upper case.
+*translate ltp_part3(1) to upper case.
+*translate ltp_part4(1) to upper case.
+*
+** Remove possible obsolete spaces coming from CHAR20
+*condense ltp_part1.
+*condense ltp_part2.
+*condense ltp_part3.
+*condense ltp_part4.
+*
+** Clear original macro parameter value
+*clear &1.
+*
+** Compose output result based on our four parts
+*concatenate ltp_part1 ltp_part2 ltp_part3 ltp_part4
+*into &1 separated by space.
+*
+*END-OF-DEFINITION.
+*
+*DEFINE m_camelcase_v2.
+*data: li_ofs type i,
+*lv_name(30).
+*
+*lv_name = &1.
+*
+*translate lv_name to lower case.
+*while sy-subrc = 0.
+*translate lv_name+li_ofs(1) to upper case.
+*find regex '\b[a-z]' in lv_name match offset li_ofs.
+*endwhile.
+*
+*clear: &1.
+*&1 = lv_name.
+*
+*END-OF-DEFINITION.
+*
+*DATA: ltp_myname1 TYPE string VALUE 'thE cOoLesT dOlPhiN'.
+*DATA: ltp_myname2 TYPE string VALUE 'thE cOoLesT dOlPhiN'.
+*
+*WRITE: / ltp_myname1.
+*m_camelcase_v1 ltp_myname1.
+*WRITE: / ltp_myname1.
+*
+*WRITE: / '--------------------------------'.
+*
+*WRITE: / ltp_myname2.
+*m_camelcase_v2 ltp_myname2.
+*WRITE: / ltp_myname2.
+
+***********************************************************************
+
+DATA lv_input1 TYPE string VALUE 'CLIENT'.
+DATA lv_input2 TYPE string VALUE 'USER_TYPE'.
+DATA lt_strings TYPE STANDARD TABLE OF string.
+DATA lv_string TYPE string.
+
+SPLIT lv_input1 AT '_' INTO TABLE lt_strings.
+
+LOOP AT lt_strings INTO lv_string.
+*  TRANSLATE
+*  SPLIT lv_string AT
+*  WRITE lv_string.
+*  WRITE /.
+
+ENDLOOP.

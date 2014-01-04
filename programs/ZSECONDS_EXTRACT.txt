@@ -1,0 +1,21 @@
+*&---------------------------------------------------------------------*
+*& Report  ZSECONDS_EXTRACT
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZSECONDS_EXTRACT.
+
+DATA ts TYPE timestamp.
+data secs TYPE int4.
+
+*CL_ABAP_TSTMP=>
+GET TIME STAMP FIELD ts.
+
+*secs = ts(0).
+secs = ts mod 10.
+
+WRITE ts.
+WRITE / secs.

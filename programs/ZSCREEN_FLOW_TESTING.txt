@@ -1,0 +1,42 @@
+*&---------------------------------------------------------------------*
+*& Report  ZSCREEN_FLOW_TESTING
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZSCREEN_FLOW_TESTING.
+
+TABLES sscrfields.
+
+SELECTION-SCREEN BEGIN OF SCREEN 200.
+  SELECTION-SCREEN PUSHBUTTON /1(20) but1 USER-COMMAND cli1.
+SELECTION-SCREEN END OF SCREEN 200.
+
+SELECTION-SCREEN BEGIN OF SCREEN 300.
+  SELECTION-SCREEN PUSHBUTTON /1(20) but2 USER-COMMAND cli2.
+SELECTION-SCREEN END OF SCREEN 300.
+
+SELECTION-SCREEN BEGIN OF SCREEN 400.
+  SELECTION-SCREEN PUSHBUTTON /1(20) but3 USER-COMMAND cli3.
+SELECTION-SCREEN END OF SCREEN 400.
+
+START-OF-SELECTION.
+but1  = 'First Screen'.
+but2  = 'Second Screen'.
+but3  = 'Third Screen'.
+
+call SELECTION-SCREEN 200.
+*call SELECTION-SCREEN 300.
+*call SELECTION-SCREEN 400.
+
+AT SELECTION-SCREEN.
+  CASE sscrfields.
+    WHEN 'CLI1'.
+      call SELECTION-SCREEN 300.
+    WHEN 'CLI2'.
+      call SELECTION-SCREEN 400.
+    WHEN 'CLI3'.
+      LEAVE PROGRAM.
+    ENDCASE.

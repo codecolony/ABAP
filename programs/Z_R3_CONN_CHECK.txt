@@ -1,0 +1,192 @@
+*&---------------------------------------------------------------------*
+*& Report  Z_R3_CONN_CHECK
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  Z_R3_CONN_CHECK.
+
+  DATA: lf_subrc       TYPE sysubrc,
+        lf_msg         TYPE c LENGTH 255,
+        ls_info        TYPE rfcsi,
+        ls_destination TYPE wbas_rfcmon_destination,
+        cs_dest        TYPE wbas_rfcmon_destination,
+        lt_rfc_msg     TYPE STANDARD TABLE OF wba_rfc_check_message,
+        ls_rfc_msg     LIKE LINE OF lt_rfc_msg.
+
+cs_dest-destination = 'SM_CVOCLNT200_READ'.
+cs_dest-rfctype = '3'.
+cs_dest-check_type = 'L'.
+
+  CASE cs_dest-check_type.
+*   "********************************************************************
+*   "* Connection check
+*   "********************************************************************
+    WHEN 'C'. "ping ohne authority check
+      CALL FUNCTION 'RFC_PING' DESTINATION cs_dest-destination
+        EXCEPTIONS
+          system_failure        = 1  MESSAGE lf_msg
+          communication_failure = 2  MESSAGE lf_msg
+          OTHERS                = 99.
+      lf_subrc = sy-subrc.
+
+      IF sy-subrc = 0.
+        CALL FUNCTION 'RFC_SYSTEM_INFO' DESTINATION cs_dest-destination
+          IMPORTING
+            rfcsi_export          = ls_info
+          EXCEPTIONS
+            system_failure        = 1
+            communication_failure = 2
+            OTHERS                = 99.
+        IF sy-subrc = 0.
+          cs_dest-system_to = ls_info-rfcsysid.
+        ENDIF.
+
+
+        CALL FUNCTION 'RFC_CONNECTION_CLOSE'
+          EXPORTING
+            destination = cs_dest-destination
+          EXCEPTIONS
+            OTHERS      = 0.
+      ENDIF.
+
+
+*   "********************************************************************
+*   "* Logon check
+*   "********************************************************************
+    WHEN 'L'. "ping mit authority check
+      "RFC-Systemcall (SRFC-FunGr) damit das RFC-Anmeldebild nicht erscheint
+      CALL FUNCTION 'RFC_PING' DESTINATION cs_dest-destination
+        EXCEPTIONS
+          system_failure        = 1  MESSAGE lf_msg
+          communication_failure = 2  MESSAGE lf_msg
+          OTHERS                = 99.
+      lf_subrc = sy-subrc.
+
+
+      IF sy-subrc = 0.
+        CALL FUNCTION 'RFC_SYSTEM_INFO' DESTINATION cs_dest-destination
+          IMPORTING
+            rfcsi_export          = ls_info
+          EXCEPTIONS
+            system_failure        = 1
+            communication_failure = 2
+            OTHERS                = 99.
+        IF sy-subrc = 0.
+          cs_dest-system_to = ls_info-rfcsysid.
+        ENDIF.
+
+        CLEAR lf_msg.
+        CALL FUNCTION 'RFCPING' DESTINATION cs_dest-destination
+          EXCEPTIONS
+            system_failure        = 1  MESSAGE lf_msg
+            communication_failure = 2  MESSAGE lf_msg
+            OTHERS                = 99.
+        lf_subrc = sy-subrc.
+
+        CALL FUNCTION 'RFC_CONNECTION_CLOSE'
+          EXPORTING
+            destination = cs_dest-destination
+          EXCEPTIONS
+            OTHERS      = 0.
+      ENDIF.
+
+
+    WHEN OTHERS.
+      "nop
+
+  ENDCASE.
+
+
+*********************************************************************
+* Resultat auswerten
+*********************************************************************
+  CASE lf_subrc.
+    WHEN 0.
+      cs_dest-check_result  = 'O'.
+      CLEAR cs_dest-check_message.
+    WHEN 1.
+      cs_dest-check_result = 'L'.
+      cs_dest-check_message = lf_msg.
+    WHEN 2.
+      cs_dest-check_result = 'C'.
+      cs_dest-check_message = lf_msg.
+    WHEN OTHERS.
+      cs_dest-check_result = 'U'.
+      cs_dest-check_message = lf_msg.
+  ENDCASE.
+
+
+  "destinations tested ok: check consistency
+  IF cs_dest-rfctype       = '3' and
+     cs_dest-check_result  = 'O'.
+    MOVE-CORRESPONDING cs_dest TO ls_destination.
+
+    DATA lo_rfc_class_ref TYPE REF TO CL_WDC_WBA_RFC_MONITORING.
+
+    create OBJECT lo_rfc_class_ref.
+
+    lo_rfc_class_ref->add_sm59_info( CHANGING cs_destination = ls_destination ).
+    lo_rfc_class_ref->add_smsy_info( CHANGING cs_destination = ls_destination ).
+
+    IF ls_destination-smsy_system IS NOT INITIAL.
+
+      "actual system found during testing = system maintained in SMSY ?
+      IF cs_dest-system_to           IS NOT INITIAL AND
+         ls_destination-smsy_system IS NOT INITIAL AND
+         cs_dest-system_to(3) <> ls_destination-smsy_system(3).
+        APPEND 'Target system <> SMSY system'               "#EC NOTEXT
+            TO lt_rfc_msg.
+      ENDIF.
+
+      "actual client found during testing = client maintained in SMSY ?
+      IF ls_destination-client_to IS NOT INITIAL AND
+         ls_destination-smsy_client IS NOT INITIAL AND
+         ls_destination-client_to <> ls_destination-smsy_client.
+        APPEND 'Target client <> SMSY client'               "#EC NOTEXT
+            TO lt_rfc_msg.
+      ENDIF.
+
+
+      IF cs_dest-destination CP '*TRUSTED' AND
+         ls_destination-type <> 'T'.
+        APPEND 'not a trusted destination'                  "#EC NOTEXT
+            TO lt_rfc_msg.
+      ENDIF.
+
+      IF cs_dest-destination CP '*READ' AND
+         ls_destination-type <> 'R'.
+        APPEND 'not a read destination'                     "#EC NOTEXT
+            TO lt_rfc_msg.
+      ENDIF.
+
+*        IF cs_dest-destination CP '*LOGIN' AND
+*           ls_destination-type <> 'L'.
+*          APPEND 'Is not a login destination' "#EC NOTEXT
+*              TO lt_rfc_msg.
+*        ENDIF.
+
+
+      IF lt_rfc_msg[] IS NOT INITIAL.
+        cs_dest-check_result  = 'W'.
+
+        CONCATENATE LINES OF lt_rfc_msg
+               INTO cs_dest-check_message SEPARATED BY ', '.
+        CONCATENATE 'Destination is inconsistent:'
+                    cs_dest-check_message
+               INTO cs_dest-check_message SEPARATED BY space.
+      ENDIF.
+
+*        ls_destination-smsy_purpose.
+    ENDIF.
+  ENDIF.
+
+  write cs_dest-check_message.
+
+  loop at lt_rfc_msg INTO ls_rfc_msg.
+
+  write ls_rfc_msg.
+
+  ENDLOOP.

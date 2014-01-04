@@ -1,0 +1,42 @@
+*&---------------------------------------------------------------------*
+*& Report  ZTEST_CONF_ALERT_GRP
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZTEST_CONF_ALERT_GRP.
+
+data: lo_object TYPE REF TO zco_confirm_alert_group.
+data: lo_fault TYPE REF TO cx_ai_system_fault.
+
+try.
+
+  CREATE OBJECT lo_object
+    EXPORTING
+      logical_port_name = 'LP_CONFIRM_ALERT_GROUP'
+    .
+    CATCH cx_ai_system_fault INTO lo_fault.    " Application Integration: Technical Error
+      MESSAGE lo_fault TYPE 'I'.
+ ENDTRY.
+
+data: input TYPE zconfirm_alert_group.
+data: output TYPE zconfirm_alert_group_response.
+data: lo_app_fault TYPE REF TO cx_ai_application_fault.
+
+input-iv_alert_group_id = '1234567'.
+
+try.
+ lo_object->confirm_alert_group(
+   EXPORTING
+     input  = input
+   IMPORTING
+     output = output
+ ).
+CATCH cx_ai_system_fault INTO lo_fault.    " Application Integration: Technical Error
+  message lo_fault type 'I'.
+   CATCH cx_ai_application_fault INTO lo_app_fault.    " Application Integration: Application Error
+MESSAGE lo_app_fault TYPE 'I'.
+
+ENDTRY.

@@ -1,0 +1,23 @@
+*&---------------------------------------------------------------------*
+*& Report  ZSTRING_OUT_OF_BOUND_EXCP
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZSTRING_OUT_OF_BOUND_EXCP.
+
+DATA lv_str TYPE string VALUE 'RAGHARAGHARAGHARAGHARAGHA'.
+DATA lv_output TYPE string.
+
+if strlen( lv_str ) > 20.
+
+  lv_output = lv_str+0(21).
+
+else.
+  lv_output = lv_str.
+
+  ENDIF.
+
+WRITE lv_output.

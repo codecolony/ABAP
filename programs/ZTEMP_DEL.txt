@@ -1,0 +1,138 @@
+*&---------------------------------------------------------------------*
+*& Report  ZTEMP_DEL
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZTEMP_DEL.
+
+*Hello, Here is the sample code to store the xml file into ABAP DB table.
+*First create a table called YTEST_BIN with following fileds.
+*Filed Nmae Data Elemen type MANDT MANDT CLNT DESCRIPTION HTTPBODY RAWSTRING
+
+*Now create a program to read the XML file from your desktop and load it into the table.
+*Below given is the code for loading the table.
+
+*REPORT y_store_xml.
+
+DATA: wf_filetab TYPE filetable .
+DATA: wf_filerc TYPE i ,
+      wf_filename TYPE string ,
+      wf_path TYPE string ,
+      wf_full_path TYPE string ,
+      wf_file_length TYPE i .
+DATA: wf_extension TYPE string ,
+      wf_fname TYPE string .
+
+DATA: BEGIN OF int_tab1 OCCURS 0,
+  int_txt(1000) TYPE x ,
+  END OF int_tab1.
+  DATA: upd_tab TYPE STANDARD TABLE OF zbadi_auto_rct .
+  DATA: wa_upd_tab LIKE LINE OF upd_tab .
+  DATA: temp_xstring TYPE xstring .
+  PARAMETERS: p_file LIKE file_table-filename LOWER CASE VISIBLE LENGTH 80 .
+  AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_file .
+    PERFORM browse_file CHANGING p_file .
+    AT SELECTION-SCREEN ON p_file .
+      IF p_file IS INITIAL .
+        MESSAGE e398(00) WITH 'Enter Filename and path' .
+        ENDIF.
+        START-OF-SELECTION .
+        CLEAR wf_filename .
+        MOVE: p_file TO wf_filename .
+        PERFORM load_file USING wf_filename .
+        PERFORM save_file_contents .
+
+*&---------------------------------------------------------------------* *&
+*Form browse_file
+*&---------------------------------------------------------------------* * text *----------------------------------------------------------------------*
+* <--P_P_FILE text *----------------------------------------------------------------------*
+  FORM browse_file CHANGING p_p_file.
+
+        CLEAR wf_filename .
+        CALL METHOD cl_gui_frontend_services=>file_open_dialog
+          EXPORTING window_title = 'Select the File'
+ DEFAULT_EXTENSION = cl_gui_frontend_services=>FILETYPE_TEXT
+* DEFAULT_FILENAME =
+ FILE_FILTER = cl_gui_frontend_services=>FILETYPE_EXCEL
+* INITIAL_DIRECTORY =
+* MULTISELECTION =
+ CHANGING file_table = wf_filetab
+   rc = wf_filerc
+* USER_ACTION =
+EXCEPTIONS file_open_dialog_failed = 1 cntl_error = 2 error_no_gui = 3 not_supported_by_gui = 4 OTHERS = 5 .
+
+IF sy-subrc = 0.
+        MESSAGE e398(00) WITH 'Error Opening File' .
+        ELSE .
+          READ TABLE wf_filetab INDEX 1 INTO p_file .
+          ENDIF.
+  ENDFORM.
+
+" browse_file *&---------------------------------------------------------------------*
+*& Form load_file *&---------------------------------------------------------------------*
+* text *----------------------------------------------------------------------*
+* -->P_WF_FILENAME text *----------------------------------------------------------------------*
+
+FORM load_file USING p_wf_filename.
+  CLEAR int_tab1 .
+  REFRESH int_tab1 .
+  CALL FUNCTION 'GUI_UPLOAD'
+    EXPORTING filename = p_wf_filename filetype = 'BIN'
+      IMPORTING filelength = wf_file_length
+* HEADER = TABLES data_tab = int_tab1
+          EXCEPTIONS
+            file_open_error = 1
+            file_read_error = 2
+            no_batch = 3
+            gui_refuse_filetransfer = 4
+            invalid_type = 5
+            no_authority = 6
+            unknown_error = 7
+            bad_data_format = 8
+            header_not_allowed = 9
+            separator_not_allowed = 10
+            header_too_long = 11
+            unknown_dp_error = 12
+            access_denied = 13
+            dp_out_of_memory = 14
+            disk_full = 15
+            dp_timeout = 16
+            OTHERS = 17 .
+
+  IF sy-subrc EQ 0.
+     MESSAGE e398(00) WITH 'File may be open - Error loading' .
+     ENDIF.
+  ENDFORM.
+
+  " load_file *&---------------------------------------------------------------------*
+*& Form save_file_contents *&---------------------------------------------------------------------*
+* text *----------------------------------------------------------------------*
+* --> p1 text * <-- p2 text *----------------------------------------------------------------------*
+  FORM save_file_contents .
+    CLEAR :wa_upd_tab , temp_xstring .
+    LOOP AT int_tab1 .
+      CONCATENATE temp_xstring int_tab1-int_txt INTO temp_xstring IN BYTE MODE.
+    ENDLOOP .
+
+    IF NOT temp_xstring IS INITIAL .
+******** optional
+*      TRY.
+*        CALL METHOD cl_abap_gzip=>compress_binary
+*          EXPORTING raw_in = temp_xstring
+*          IMPORTING gzip_out = wa_upd_tab-descr.
+*      CATCH cx_parameter_invalid_range .
+*          CATCH cx_sy_buffer_overflow .
+*            CATCH cx_sy_compression_error .
+*      ENDTRY.
+
+      APPEND wa_upd_tab TO upd_tab .
+   ENDIF .
+
+   IF NOT upd_tab IS INITIAL .
+     MODIFY zbadi_auto_rct FROM TABLE upd_tab .
+     IF sy-subrc EQ 0 .
+       MESSAGE i398(00) WITH wf_filename ` Saved!`.
+       ENDIF . ENDIF. ENDFORM. " save_file_contents Vasanth

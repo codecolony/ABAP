@@ -1,0 +1,33 @@
+*&---------------------------------------------------------------------*
+*& Report  ZWMM_URL_LAUNCH
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZWMM_URL_LAUNCH.
+DATA: lr_lanscape TYPE REF TO cl_diagls_factory,
+      lr_app TYPE REF TO cl_urlapi_application,
+      ls_p_ctx TYPE surlapi_parameters_context,
+      lt_tech_systems TYPE tt_diagls_technical_systems,
+      ls_tech_system LIKE LINE OF lt_tech_systems.
+
+* get landscape factory
+lr_lanscape = cl_diagls_factory=>new_instance( ).
+
+ls_tech_system = lr_lanscape->get_technical_system_by_id( 'SD7~ABAP' ).
+APPEND ls_tech_system TO lt_tech_systems.
+ls_p_ctx-technical_systems = lt_tech_systems.
+
+TRY.
+    cl_urlapi_application_manager=>get_application( EXPORTING im_app_id = 'SMADMIN_WORKMODE'
+                                                    RECEIVING re_application = lr_app ).
+
+    lr_app->set_parameters_context( ls_p_ctx ).
+    cl_urlapi_application_manager=>launch_application( lr_app ).
+  CATCH cx_urlapi_app_exception.
+    "exception handling
+  CATCH cx_urlapi_url_exception.
+    "exception handling
+ENDTRY.

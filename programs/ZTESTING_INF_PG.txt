@@ -1,0 +1,18 @@
+*&---------------------------------------------------------------------*
+*& Report  ZTESTING_INF_PG
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZTESTING_INF_PG.
+
+data obj type ref to ztesting_inf_class.
+data lv_value TYPE string.
+
+create OBJECT obj.
+
+lv_value = obj->ZTESTING_INF~firstattr.
+
+write lv_value.

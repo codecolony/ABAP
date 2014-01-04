@@ -1,0 +1,55 @@
+*&---------------------------------------------------------------------*
+*& Report  ZNUMBER_FORMATTING
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZNUMBER_FORMATTING.
+
+DATA lv_value type AC_TEXT_255.
+DATA lv_decimals TYPE string.
+DATA lv_decfloat TYPE string.
+DATA lv_finput TYPE f VALUE 312149.
+*DATA lv_data TYPE any." VALUE 1372680968000.
+DATA lv_long TYPE n.
+DATA lv_int  TYPE i.
+
+FIELD-SYMBOLS <lv_data> type any.
+
+DATA lv_input TYPE DECFLOAT34 VALUE 1321323.
+
+*WRITE: 'original' ,lv_finput.
+*WRITE: /.
+**
+**                  CLEAR: lv_value,ls_event_groups-min_value,lv_decimals,lv_decfloat.
+*                  lv_decimals = frac( lv_finput ).
+*                  IF lv_decimals EQ 0.
+*                    lv_decfloat = trunc( lv_finput ).
+*                    WRITE lv_decfloat TO lv_value.
+*                    WRITE: 'dec zero case' ,lv_value.
+*                  ELSE.
+*                    WRITE lv_input TO lv_value.
+*                    WRITE:/ 'dec not zero case' ,lv_value.
+*                  ENDIF.
+*                  SHIFT lv_value LEFT DELETING LEADING space.
+*
+*                  write:/ 'leading space deleted', lv_value.
+**                  CONCATENATE lv_value ls_event_groups-unit_desc INTO ls_event_groups-min_value
+**                  SEPARATED BY space.
+*
+
+*<lv_data> = 1372680968000.
+ASSIGN 1372680968000 TO <lv_data>.
+              IF <lv_data> gt 2147483647.
+*                WRITE <lv_data> TO lv_long.
+*                lv_value = lv_long.
+                WRITE <lv_data> TO lv_value.
+                SHIFT lv_value LEFT DELETING LEADING space.
+                WRITE: 'long int ', lv_value.
+              ELSE.
+                lv_int = <lv_data>.
+                lv_long = lv_int.
+                WRITE: 'short int ', lv_long.
+              ENDIF.

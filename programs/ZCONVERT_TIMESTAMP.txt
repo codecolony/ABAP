@@ -1,0 +1,40 @@
+*&---------------------------------------------------------------------*
+*& Report  ZCONVERT_TIMESTAMP
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZCONVERT_TIMESTAMP.
+data lv_user_date_string type string.
+data lv_user_time_string type string.
+data lv_date          type d.
+data lv_time          type t.
+DATA dst TYPE c LENGTH 1.
+data lv_output  TYPE string.
+data ip_timestamp TYPE timestamp VALUE 20120309043000.
+
+"get time stamp field lv_timestamp.
+GET TIME STAMP FIELD ip_timestamp.
+
+" convert timestamp in UTC to data and time in user time zone
+convert time stamp ip_timestamp time zone sy-zonlo into date lv_date time lv_time DAYLIGHT SAVING TIME dst.
+
+" convert date/time to string using USER format settings for data and time
+lv_user_date_string  = |{ lv_date date = user }|.
+lv_user_time_string  = |{ lv_time time = user }|.
+
+CONCATENATE lv_user_date_string lv_user_time_string INTO lv_output SEPARATED BY space.
+write lv_output.
+write /.
+
+convert time stamp ip_timestamp time zone sy-zonlo into date lv_date time lv_time DAYLIGHT SAVING TIME dst.
+
+" convert date/time to string using USER format settings for data and time
+lv_user_date_string  = |{ lv_date date = user }|.
+lv_user_time_string  = |{ lv_time time = user }|.
+
+CONCATENATE lv_user_date_string lv_user_time_string INTO lv_output SEPARATED BY space.
+write lv_output.
+write /.

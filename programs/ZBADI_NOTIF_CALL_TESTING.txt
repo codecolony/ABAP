@@ -1,0 +1,50 @@
+*&---------------------------------------------------------------------*
+*& Report  ZBADI_NOTIF_CALL_TESTING
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZBADI_NOTIF_CALL_TESTING.
+ data lo_badi_tool type ref to cl_enh_tool_badi_impl.
+ data lt_implementations type enh_badi_impl_data_it.
+ data ls_filter           type enh_badiimpl_filter_value.
+ data badi                type ref to BADI_INCI_NOTIF_MULTIPLE_USE.
+ data subject TYPE string.
+ data body TYPE string.
+
+  field-symbols: <fs_implementation> like line of lt_implementations.
+  field-symbols <fs_filter_value>    type enh_badiimpl_filter_value. 
+
+try .
+
+      lo_badi_tool ?= cl_enh_factory=>get_enhancement( enhancement_id = 'ZRAGHA_TESTING' ).
+      lt_implementations = lo_badi_tool->get_implementations( ).
+      loop at lt_implementations assigning <fs_implementation> .
+        " get FILTER
+        read table <fs_implementation>-filter_values index 1 assigning <fs_filter_value>. " new code OH 18-01-2012
+        if sy-subrc <> 0.   " new code OH 18-01-2012
+          continue.         " new code OH 18-01-2012
+        endif.              " new code OH 18-01-2012
+
+
+*        check <fs_implementation>-badi_name = 'BADI_TMON_TROUBLESHOOTING'. 
+*        loop at <fs_implementation>-filter_values into ls_filter.          
+          get badi badi
+            filters
+              consumer = <fs_filter_value>-filter_string_value1. "ls_filter-filter_char_value1.
+
+          call badi badi->FORM_MAIL_BODY
+            importing
+              EP_BODY    = body
+              EP_SUBJECT = subject
+            .
+
+          WRITE: body, subject, /.
+
+      endloop.
+
+    catch cx_enh_root .
+
+  endtry.

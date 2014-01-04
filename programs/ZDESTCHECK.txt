@@ -1,0 +1,109 @@
+*&---------------------------------------------------------------------*
+*& Report  ZDESTCHECK
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT  ZDESTCHECK.
+
+      DATA: lf_subrc       TYPE sysubrc,
+            ll_subrc       TYPE sysubrc,
+        lf_msg         TYPE c LENGTH 255,
+        ls_info        TYPE rfcsi,
+        ls_destination TYPE wbas_rfcmon_destination,
+        lt_rfc_msg     TYPE STANDARD TABLE OF wba_rfc_check_message,
+        cs_dest TYPE wba_rfcmon_dest.
+
+
+
+  cs_dest-DESTINATION = 'SAPOSSdsfd'.
+**  cs_dest-system_from = 'ldcismv1.wdf.sap.corp'.
+*
+*  CASE cs_dest-check_type.
+*   "********************************************************************
+*   "* Connection check
+*   "********************************************************************
+
+      CALL FUNCTION 'RFC_PING' DESTINATION cs_dest-destination
+        EXCEPTIONS
+          system_failure        = 1  MESSAGE lf_msg
+          communication_failure = 2  MESSAGE lf_msg
+          OTHERS                = 99.
+      lf_subrc = sy-subrc.
+
+      IF lf_subrc = 0.
+        CALL FUNCTION 'RFC_SYSTEM_INFO' DESTINATION cs_dest-destination
+          IMPORTING
+            rfcsi_export          = ls_info
+          EXCEPTIONS
+            system_failure        = 1
+            communication_failure = 2
+            OTHERS                = 99.
+
+        lf_subrc = sy-subrc.
+
+        IF lf_subrc = 0.
+          cs_dest-system_to = ls_info-rfcsysid.
+        ENDIF.
+
+        CALL FUNCTION 'RFC_CONNECTION_CLOSE'
+          EXPORTING
+            destination = cs_dest-destination
+          EXCEPTIONS
+            OTHERS      = 0.
+      ENDIF.
+
+
+
+  IF lf_subrc = 0.
+
+*   "********************************************************************
+*   "* Logon check
+*   "********************************************************************
+
+
+      "RFC-Systemcall (SRFC-FunGr) damit das RFC-Anmeldebild nicht erscheint
+      CALL FUNCTION 'RFC_PING' DESTINATION cs_dest-destination
+        EXCEPTIONS
+          system_failure        = 1  MESSAGE lf_msg
+          communication_failure = 2  MESSAGE lf_msg
+          OTHERS                = 99.
+      lf_subrc = sy-subrc.
+
+      IF sy-subrc = 0.
+        CALL FUNCTION 'RFC_SYSTEM_INFO' DESTINATION cs_dest-destination
+          IMPORTING
+            rfcsi_export          = ls_info
+          EXCEPTIONS
+            system_failure        = 1
+            communication_failure = 2
+            OTHERS                = 99.
+        IF sy-subrc = 0.
+          cs_dest-system_to = ls_info-rfcsysid.
+        ENDIF.
+
+        CLEAR lf_msg.
+        CALL FUNCTION 'RFCPING' DESTINATION cs_dest-destination
+          EXCEPTIONS
+            system_failure        = 1  MESSAGE lf_msg
+            communication_failure = 2  MESSAGE lf_msg
+            OTHERS                = 99.
+        lf_subrc = sy-subrc.
+
+        CALL FUNCTION 'RFC_CONNECTION_CLOSE'
+          EXPORTING
+            destination = cs_dest-destination
+          EXCEPTIONS
+            OTHERS      = 0.
+      ENDIF.
+
+
+  ENDIF.
+
+
+*********************************************************************
+* Evaluating Results
+*********************************************************************
+WRITE lf_msg.
